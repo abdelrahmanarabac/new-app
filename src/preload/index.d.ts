@@ -10,6 +10,7 @@ declare global {
       removeDownloadProgressListener: () => void
       getConfig: () => Promise<any>
       setConfig: (key: string, value: any) => Promise<void>
+      selectAudioFile: () => Promise<string[]>
     }
   }
 }

@@ -6,6 +6,7 @@ import { PlayerControls } from '@ui/components/PlayerControls'
 import { DownloaderPanel } from '@ui/components/DownloaderPanel'
 import { player, PlayerState } from '@modules/player/playerEngine'
 import { Track } from '@shared/types'
+import { FolderOpen } from 'lucide-react'
 
 function App() {
   const [tracks, setTracks] = useState<Track[]>([])
@@ -55,26 +56,43 @@ function App() {
 
         const name = p.split('\\').pop() || p.split('/').pop() || 'Unknown'
 
-        newTracks.push({
-          id: Math.random().toString(36).substr(2, 9),
-          url: p,
-          title: meta.title || name,
-          artist: meta.artist || 'Unknown Artist',
-          duration: meta.duration || 0,
-          source: 'local',
-          status: 'ready',
-          dateAdded: Date.now()
-        })
+        // Check for duplicates before adding
+        const exists = tracks.some(t => t.url === p)
+        if (!exists) {
+          newTracks.push({
+            id: Math.random().toString(36).substr(2, 9),
+            url: p,
+            title: meta.title || name,
+            artist: meta.artist || 'Unknown Artist',
+            duration: meta.duration || 0,
+            source: 'local',
+            status: 'ready',
+            dateAdded: Date.now()
+          })
+        }
       }
 
       setTracks(prev => {
-        // Filter duplicates by URL
+        // Double check against prev state
         const existingUrls = new Set(prev.map(t => t.url))
         const uniqueNew = newTracks.filter(t => !existingUrls.has(t.url))
         return [...prev, ...uniqueNew]
       })
     } catch (err) {
       console.error("File drop error", err)
+    }
+  }
+
+  const handleBrowseFiles = async () => {
+    if (window.api && window.api.selectAudioFile) {
+      try {
+        const paths = await window.api.selectAudioFile();
+        if (paths && paths.length > 0) {
+          await handleFilesDropped(paths);
+        }
+      } catch (error) {
+        console.error("Failed to browse files:", error)
+      }
     }
   }
 
@@ -115,6 +133,16 @@ function App() {
           <div className="p-6 pb-2">
             <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-neon">VIBE</h1>
             <p className="text-xs text-white/40 tracking-widest uppercase">Music Player</p>
+          </div>
+
+          <div className="px-6 mb-4">
+            <button
+              onClick={handleBrowseFiles}
+              className="w-full h-12 flex items-center justify-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl text-white/80 font-medium tracking-wide transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 group"
+            >
+              <FolderOpen size={18} className="text-purple-400 group-hover:text-purple-300 transition-colors drop-shadow-neon" />
+              <span>Browse Files</span>
+            </button>
           </div>
 
           {/* Library */}

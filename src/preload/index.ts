@@ -8,7 +8,8 @@ const api = {
   onDownloadProgress: (callback: (data: any) => void) => ipcRenderer.on('download-progress', (_, data) => callback(data)),
   removeDownloadProgressListener: () => ipcRenderer.removeAllListeners('download-progress'),
   getConfig: (): Promise<any> => ipcRenderer.invoke('get-config'),
-  setConfig: (key: string, value: any) => ipcRenderer.invoke('set-config', key, value)
+  setConfig: (key: string, value: any) => ipcRenderer.invoke('set-config', key, value),
+  selectAudioFile: (): Promise<string[]> => ipcRenderer.invoke('select-audio-file')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

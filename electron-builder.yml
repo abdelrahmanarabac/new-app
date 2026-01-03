@@ -11,7 +11,10 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
-  - "**/node_modules/ffmpeg-static/**"
+
+extraFiles:
+  - from: "node_modules/ffmpeg-static/ffmpeg.exe"
+    to: "resources/bin/ffmpeg.exe"
 win:
   executableName: vibe-music-player
 nsis:

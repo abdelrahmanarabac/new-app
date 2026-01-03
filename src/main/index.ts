@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import icon from '../../resources/icon.png?asset'
 import { setupDownloader } from '../modules/downloader/ytdlMain'
@@ -59,6 +59,15 @@ app.whenReady().then(() => {
   setupDownloader(downloadPath)
   setupMetadata()
   setupStore()
+
+  // Native File Selection Dialog
+  ipcMain.handle('select-audio-file', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Audio Files', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'flac'] }]
+    })
+    return result.canceled ? [] : result.filePaths
+  })
 
   createWindow()
 

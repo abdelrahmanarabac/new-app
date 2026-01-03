@@ -3,16 +3,25 @@ import ytdl from '@distube/ytdl-core'
 import fs from 'fs'
 import path from 'path'
 import ffmpeg from 'fluent-ffmpeg'
-import ffmpegPath from 'ffmpeg-static'
-
-// Basic FFmpeg setup
-// Fix for production ASAR archive access
-const fixPathForAsarUnpack = (path: string) => {
-    return path.replace('app.asar', 'app.asar.unpacked')
+// Dynamic FFmpeg Path Resolver for Production/Dev
+const getFfmpegPath = () => {
+    const isPackaged = app.isPackaged
+    let ffmpegPath = ''
+    
+    if (isPackaged) {
+        ffmpegPath = path.join(process.resourcesPath, 'bin', 'ffmpeg.exe')
+    } else {
+        ffmpegPath = path.join(process.cwd(), 'resources', 'bin', 'ffmpeg.exe')
+    }
+    
+    return ffmpegPath
 }
 
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(fixPathForAsarUnpack(ffmpegPath))
+if (process.platform === 'win32') {
+    ffmpeg.setFfmpegPath(getFfmpegPath())
+} else {
+    // Fallback or handle linux/mac pathing if needed
+    ffmpeg.setFfmpegPath(getFfmpegPath())
 }
 
 const activeProcesses: Set<any> = new Set()
