@@ -1,10 +1,12 @@
-# vibe-music-player
+# Vibe Music Player
 
-An Electron application with React and TypeScript
+An Electron application with React and TypeScript.
 
-## Recommended IDE Setup
-
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+## Features
+- **Deep Atmospheric Glass UI**: A production-grade, neon-infused bespoke design.
+- **Local Playback**: Drag & Drop support for MP3s with metadata parsing.
+- **YouTube Downloader**: Integrated yt-dlp/ffmpeg support for high-quality audio extraction.
+- **Audio Engine**: Powered by Howler.js for seamless playback.
 
 ## Project Setup
 
