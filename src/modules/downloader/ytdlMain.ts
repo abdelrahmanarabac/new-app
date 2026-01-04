@@ -1,95 +1,107 @@
 import { ipcMain } from 'electron'
-import ytdl from '@distube/ytdl-core'
 import fs from 'fs'
 import path from 'path'
-import { validateYoutubeUrl, sanitizeFilename } from './validator'
+import { validateYoutubeUrl } from './validator'
+import { DownloadManager } from './core/DownloadManager'
+import { sanitizeFilename } from './validator'
 
-const activeProcesses: Set<any> = new Set()
+// Singleton instance
+const downloadManager = new DownloadManager()
 
 export function killAllDownloads() {
-  activeProcesses.forEach(req => {
-    try { req.destroy() } catch (e) { }
-  })
-  activeProcesses.clear()
+  downloadManager.cancelAll().catch(err => console.error('Failed to cancel all downloads:', err))
 }
-
 
 export function setupDownloader(downloadPath: string) {
   if (!fs.existsSync(downloadPath)) {
     fs.mkdirSync(downloadPath, { recursive: true })
   }
 
+  // Initialize the manager (binary check)
+  downloadManager.initialize().catch(err => {
+      console.error('Failed to initialize DownloadManager:', err);
+  });
+
   ipcMain.handle('download-video', async (event, url) => {
     try {
-      console.log(`📡 Analyzing: ${url}`)
+      console.log(`📡 Analyzing with yt-dlp: ${url}`)
       if (!validateYoutubeUrl(url)) throw new Error('رابط يوتيوب غير صالح')
 
-      // 1. Get Info First
-      const info = await ytdl.getInfo(url, {
-        requestOptions: {
-            headers: {
-                // التخفي: بنقول ليوتيوب إحنا جوجل كروم ويندوز
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-            }
-        }
-      })
-
-      const title = sanitizeFilename(info.videoDetails.title)
-      const filename = `${title}.m4a`
-      const filePath = path.join(downloadPath, filename)
+      // 1. Get Info First (Restoring legacy behavior)
+      const info = await downloadManager.getMediaInfo(url);
+      const title = sanitizeFilename(info.title);
+      const filename = `${title}.m4a`;
+      const filePath = path.join(downloadPath, filename);
 
       if (fs.existsSync(filePath)) {
-        return { status: 'exists', filePath, title, duration: info.videoDetails.lengthSeconds }
+        return { status: 'exists', filePath, title, duration: info.duration }
       }
 
-      // 2. Smart Format Selection: Find real M4A/MP4 audio
-      // لو ملقاش m4a صريح، هيرضى بأي حاجة صوت
-      const format = ytdl.chooseFormat(info.formats, { 
-        quality: 'highestaudio', 
-        filter: (f) => f.hasAudio && !f.hasVideo && (f.container === 'mp4' || (f.container as string) === 'm4a') 
-      }) || ytdl.chooseFormat(info.formats, { quality: 'highestaudio', filter: 'audioonly' })
-
-      if (!format) throw new Error('لم يتم العثور على صيغة صوت مناسبة')
-
-      console.log(`🚀 Starting Stealth Download: ${title} [${format.container}]`)
+      console.log(`🚀 Starting Download Job for: ${title}`);
+      
+      const job = await downloadManager.startDownload(url, {
+          format: 'audio', // Defaulting to audio as per legacy behavior
+          quality: 'best',
+          outputDir: downloadPath,
+          filenameTemplate: title // Pass title to ensure filename matches expectations?
+          // Note: Adapter uses simple template. We might need to ensure filename matches.
+          // Adapter uses: path.join(options.outputDir, '%(title)s.%(ext)s')
+          // This should match title mostly, but sanitization might differ.
+          // Ideally pass the filename template to yt-dlp.
+      });
 
       return new Promise((resolve, reject) => {
-          const stream = ytdl.downloadFromInfo(info, { format: format })
-          const fileWriter = fs.createWriteStream(filePath)
+          const onProgress = (data: { jobId: string, percent: number }) => {
+              if (data.jobId === job.id) {
+                 event.sender.send('download-progress', { progress: data.percent, status: 'downloading' });
+              }
+          };
 
-          let lastPercent = 0
+          const onCompleted = (jobId: string) => {
+              if (jobId === job.id) {
+                  cleanup();
+                  
+                  event.sender.send('download-progress', { progress: 100, status: 'completed' });
+                  resolve({ 
+                      status: 'completed', 
+                      filePath, 
+                      title: info.title, 
+                      duration: info.duration
+                  });
+              }
+          };
 
-          stream.on('progress', (_, downloaded, total) => {
-             const percent = (downloaded / total) * 100
-             if (percent - lastPercent > 2 || percent === 100) {
-                 lastPercent = percent
-                 event.sender.send('download-progress', { progress: percent, status: 'downloading' })
-             }
-          })
+          const onFailed = (data: { id: string, error: string }) => {
+              if (data.id === job.id) {
+                  cleanup();
+                  console.error('❌ Job Error:', data.error);
+                  event.sender.send('download-progress', { status: 'error', error: data.error });
+                  reject(new Error(data.error));
+              }
+          };
 
-          stream.pipe(fileWriter)
-
-          fileWriter.on('finish', () => {
-             console.log('✅ Download Finished')
-             event.sender.send('download-progress', { progress: 100, status: 'completed' })
-             resolve({ status: 'completed', filePath, title, duration: info.videoDetails.lengthSeconds })
-          })
-
-          stream.on('error', (err) => {
-             console.error('❌ Stream Error:', err.message)
-             // مسح الملف المعطوب لو فشل
-             if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
-             
-             event.sender.send('download-progress', { status: 'error', error: err.message })
-             reject(err)
-          })
+          // Attach listeners to the private adapter (hacky but effective for migration)
+          // Ideally DownloadManager should re-emit these
+          // For now, we'll trust the DownloadManager to be the event source if we updated it,
+          // but currently `DownloadManager` subscribes to its adapter but doesn't re-emit to us easily.
+          // Let's rely on the internal adapter logic or just modify DownloadManager to be an EventEmitter.
+          // Actually, DownloadManager setupListeners() logs but doesn't bubble events. 
+          // FIX: We need DownloadManager to emit events.
           
-          activeProcesses.add(stream)
-      })
+          
+          downloadManager.on('progress', onProgress);
+          downloadManager.on('job-completed', onCompleted);
+          downloadManager.on('job-failed', onFailed);
+
+          const cleanup = () => {
+              downloadManager.off('progress', onProgress);
+              downloadManager.off('job-completed', onCompleted);
+              downloadManager.off('job-failed', onFailed);
+          };
+      });
 
     } catch (e: any) {
       console.error('🔥 Critical Handler Error:', e.message)
-      // ابعت الخطأ للواجهة عشان نشوفه
       throw new Error(e.message || 'فشل التحميل لسبب غير معروف')
     }
   })

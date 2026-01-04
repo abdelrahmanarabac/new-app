@@ -21,7 +21,7 @@
     "build:linux": "electron-vite build && electron-builder --linux"
   },
   "dependencies": {
-    "@distube/ytdl-core": "^4.16.12",
+
     "@electron-toolkit/preload": "^3.0.2",
     "clsx": "^2.1.1",
     "electron-store": "^8.1.0",
