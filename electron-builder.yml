@@ -12,9 +12,7 @@ files:
 asarUnpack:
   - resources/**
 
-extraFiles:
-  - from: "node_modules/ffmpeg-static/ffmpeg.exe"
-    to: "resources/bin/ffmpeg.exe"
+
 win:
   executableName: vibe-music-player
 nsis:
