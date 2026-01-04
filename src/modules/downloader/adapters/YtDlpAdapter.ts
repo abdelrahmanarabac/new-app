@@ -1,10 +1,10 @@
 import { IMediaDownloader } from '../core/IMediaDownloader';
-import { DownloadJob, DownloadOptions, DownloadProgress } from '../core/types';
+import { DownloadJob, DownloadOptions, MediaMetadata } from '../core/types';
 import { EventEmitter } from 'events';
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import { app } from 'electron';
+
 import { BinaryInstaller } from '../../infrastructure/BinaryInstaller';
 
 export class YtDlpAdapter extends EventEmitter implements IMediaDownloader {
@@ -111,7 +111,7 @@ export class YtDlpAdapter extends EventEmitter implements IMediaDownloader {
                         sourceUrl: url
                     };
                     resolve(metadata);
-                } catch (_e) {
+                } catch {
                     reject(new Error('Failed to parse yt-dlp metadata'));
                 }
             } else {
@@ -121,7 +121,7 @@ export class YtDlpAdapter extends EventEmitter implements IMediaDownloader {
     });
   }
 
-  private parseProgress(text: string, jobId: string) {
+  private parseProgress(text: string, jobId: string): void {
     // Regex for [download]  45.5% of 10.00MiB at 2.50MiB/s ETA 00:05
     const percentMatch = text.match(/\[download\]\s+(\d+\.\d+)%/);
     if (percentMatch) {
