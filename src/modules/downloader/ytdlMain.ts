@@ -1,38 +1,19 @@
-import { ipcMain, app } from 'electron'
+import { ipcMain } from 'electron'
 import ytdl from '@distube/ytdl-core'
 import fs from 'fs'
 import path from 'path'
-import ffmpeg from 'fluent-ffmpeg'
-// Dynamic FFmpeg Path Resolver for Production/Dev
-const getFfmpegPath = () => {
-    const isPackaged = app.isPackaged
-    let ffmpegPath = ''
-    
-    if (isPackaged) {
-        ffmpegPath = path.join(process.resourcesPath, 'bin', 'ffmpeg.exe')
-    } else {
-        ffmpegPath = path.join(process.cwd(), 'resources', 'bin', 'ffmpeg.exe')
-    }
-    
-    return ffmpegPath
-}
-
-if (process.platform === 'win32') {
-    ffmpeg.setFfmpegPath(getFfmpegPath())
-} else {
-    // Fallback or handle linux/mac pathing if needed
-    ffmpeg.setFfmpegPath(getFfmpegPath())
-}
+// FFmpeg removed: simpler, zero-dependency piping
+// Using native formats (m4a/webm) directly from stream
 
 const activeProcesses: Set<any> = new Set()
 
 export function killAllDownloads() {
   console.log(`Cleaning up ${activeProcesses.size} active downloads...`)
-  activeProcesses.forEach(proc => {
+  activeProcesses.forEach(stream => {
     try {
-      proc.kill('SIGKILL')
+      if (!stream.destroyed) stream.destroy()
     } catch (e) {
-      console.error('Failed to kill process', e)
+      console.error('Failed to kill stream', e)
     }
   })
   activeProcesses.clear()
@@ -55,42 +36,43 @@ export function setupDownloader(downloadPath: string) {
 
       const info = await ytdl.getInfo(url)
       const title = sanitizeFilename(info.videoDetails.title)
-      const filename = `${title}.mp3`
+      // Changed to .m4a (AAC) - native container for YouTube audio
+      const filename = `${title}.m4a`
       const filePath = path.join(downloadPath, filename)
 
       if (fs.existsSync(filePath)) {
         return { status: 'exists', filePath, title, duration: info.videoDetails.lengthSeconds }
       }
 
-      // We return a promise that resolves when download completes
       return new Promise((resolve, reject) => {
-          const stream = ytdl(url, { quality: 'highestaudio' })
+          // Direct stream without re-encoding
+          const stream = ytdl(url, { quality: 'highestaudio', filter: 'audioonly' })
           
-          let proc: any = ffmpeg(stream)
-            .audioBitrate(128)
-            .format('mp3')
-            .on('progress', (p) => {
-               if (p.percent) {
-                 event.sender.send('download-progress', { progress: p.percent, status: 'downloading' })
-               }
-            })
-            .on('end', () => {
-               activeProcesses.delete(proc)
-               event.sender.send('download-progress', { progress: 100, status: 'completed' })
-               resolve({ status: 'completed', filePath, title, duration: info.videoDetails.lengthSeconds })
-            })
-            .on('error', (err) => {
-               activeProcesses.delete(proc)
-               console.error('FFmpeg Error:', err)
-               // Don't reject if killed manually (app exit)
-               if (err.message.includes('SIGKILL')) return
-               
-               event.sender.send('download-progress', { status: 'error', error: err.message })
-               reject(err)
-            })
+
+
+          stream.on('progress', (_chunkLength, downloaded, total) => {
+            const percent = downloaded / total
+            const progress = (percent * 100).toFixed(2)
+             
+            // Throttle updates slightly if needed, but simple is fine
+            event.sender.send('download-progress', { progress: parseFloat(progress), status: 'downloading' })
+          })
+
+          stream.on('end', () => {
+             activeProcesses.delete(stream)
+             event.sender.send('download-progress', { progress: 100, status: 'completed' })
+             resolve({ status: 'completed', filePath, title, duration: info.videoDetails.lengthSeconds })
+          })
+
+          stream.on('error', (err) => {
+             activeProcesses.delete(stream)
+             console.error('Stream Error:', err)
+             event.sender.send('download-progress', { status: 'error', error: err.message })
+             reject(err)
+          })
             
-          activeProcesses.add(proc)
-          proc.save(filePath)
+          activeProcesses.add(stream)
+          stream.pipe(fs.createWriteStream(filePath))
       })
     } catch (e: any) {
       console.error('Download Handler Error:', e)

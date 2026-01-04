@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { MainLayout } from '@ui/layouts/MainLayout'
 import { DragDropZone } from '@modules/library/DragDropZone'
 import { TrackList } from '@ui/components/TrackList'
@@ -138,21 +139,34 @@ function App() {
           <div className="px-6 mb-4">
             <button
               onClick={handleBrowseFiles}
-              className="w-full h-12 flex items-center justify-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl text-white/80 font-medium tracking-wide transition-all duration-300 hover:bg-white/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 group"
+              className="w-full h-12 flex items-center justify-center gap-3 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl text-white/80 font-medium tracking-wide transition-all duration-300 hover:bg-white/10 group"
             >
-              <FolderOpen size={18} className="text-purple-400 group-hover:text-purple-300 transition-colors drop-shadow-neon" />
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1 }}
+              >
+                <FolderOpen size={18} className="text-purple-400 group-hover:text-purple-300 transition-colors drop-shadow-neon" />
+              </motion.div>
               <span>Browse Files</span>
             </button>
           </div>
 
           {/* Library */}
           <div className="flex-1 overflow-hidden px-2">
-            <TrackList
-              tracks={tracks}
-              currentTrack={currentTrack}
-              onPlay={handlePlay}
-              isPlaying={playerState === 'playing'}
-            />
+            <AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="h-full"
+              >
+                <TrackList
+                  tracks={tracks}
+                  currentTrack={currentTrack}
+                  onPlay={handlePlay}
+                  isPlaying={playerState === 'playing'}
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
         </aside>
 
@@ -160,10 +174,14 @@ function App() {
         <main className="flex-1 relative flex flex-col items-center justify-center p-8 pb-32 overflow-hidden">
 
           {/* Background Decoration */}
-          <div className="absolute inset-0 pointer-events-none">
+          <motion.div
+            animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 pointer-events-none bg-[length:200%_200%] bg-gradient-to-br from-black via-[#0f0c29] to-[#302b63]"
+          >
             <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-purple-600/20 blur-[120px] rounded-full mix-blend-screen" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-blue-600/10 blur-[100px] rounded-full mix-blend-screen" />
-          </div>
+          </motion.div>
 
           {/* Downloader Widget (Absolute Top Right) */}
           <div className="absolute top-6 right-6 z-30 w-full max-w-sm">
@@ -173,15 +191,29 @@ function App() {
           {/* ALBUM ART - The "Vibe" Centerpiece */}
           <div className="relative z-10 group">
             {/* Main Art */}
-            <div className={cn(
-              "w-[320px] h-[320px] rounded-3xl bg-black/50 shadow-2xl relative overflow-hidden border border-white/10 transition-all duration-700 ease-in-out",
-              playerState === 'playing' ? "animate-breathe shadow-[0_0_50px_rgba(139,92,246,0.3)]" : "scale-95 opacity-80"
-            )}>
+            <motion.div
+              animate={playerState === 'playing' ? { rotate: 360 } : { rotate: 0 }}
+              transition={playerState === 'playing' ? { duration: 10, repeat: Infinity, ease: "linear" } : { duration: 0.8 }}
+              className={cn(
+                "w-[320px] h-[320px] rounded-full bg-black/50 shadow-2xl relative overflow-hidden border border-white/10",
+                playerState === 'playing' ? "shadow-[0_0_50px_rgba(139,92,246,0.5)]" : "opacity-90"
+              )}
+            >
               {/* Placeholder Gradient Art */}
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-80" />
+
+              {/* Spinning Vinyl Effect */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle,transparent_20%,#000_21%,transparent_22%,transparent_30%,#000_31%,transparent_32%)] opacity-30" />
+
               {currentTrack ? (
-                <div className="absolute inset-0 flex items-center justify-center text-6xl font-black text-white/20 mix-blend-overlay">
-                  {currentTrack.title.charAt(0)}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    className="text-6xl font-black text-white/20 mix-blend-overlay"
+                  >
+                    {currentTrack.title.charAt(0)}
+                  </motion.div>
                 </div>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-white/10">
@@ -191,10 +223,17 @@ function App() {
 
               {/* Glass Sheen */}
               <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent pointer-events-none" />
-            </div>
 
-            {/* Reflection Effect */}
-            <div className="mt-4 w-[300px] h-[20px] mx-auto bg-black/20 blur-xl rounded-[100%] opacity-60" />
+              {/* Center Label Hole */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-black rounded-full border border-white/10" />
+            </motion.div>
+
+            {/* Floating Animation Wrapper */}
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="mt-8 mx-auto w-[200px] h-[20px] bg-black/40 blur-xl rounded-[100%]"
+            />
           </div>
 
           {/* Song Title (Large) */}
