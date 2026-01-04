@@ -3,7 +3,9 @@ import { join } from 'path'
 import icon from '../../resources/icon.png?asset'
 import { setupDownloader } from '../modules/downloader/ytdlMain'
 import { setupMetadata } from '../modules/library/metadataMain'
+
 import { setupStore } from '../modules/downloader/storeMain'
+import { BinaryInstaller } from '../modules/infrastructure/BinaryInstaller'
 
 function createWindow(): void {
   // Create the browser window.
@@ -69,12 +71,37 @@ app.whenReady().then(() => {
     return result.canceled ? [] : result.filePaths
   })
 
-  createWindow()
+  // Self-Healing Infrastructure Check
+  // We block the main window until binaries are confirmed
+  console.log('🔧 Checking critical binaries...')
+  BinaryInstaller.ensureBinariesExist().then((success) => {
+      if (success) {
+          console.log('✅ Binaries verified. Launching UI.')
+          createWindow()
+      } else {
+          console.error('❌ Critical binary check failed. App might not function correctly.')
+          // In a real app we might show a dialog here or quit.
+          // For now, attempting to launch anyway is risky but allows debug.
+          // But strict req says: "Block the main window until ensureBinaries() returns true."
+          // So if failed, we probably shouldn't show the main window or show an error window.
+          // Let's launch anyway but maybe with an error flag? checking prompt "Block... until returns true"
+          // If it returns false, it means download failed even after retries.
+          dialog.showErrorBox('Critical Error', 'Failed to download necessary components (yt-dlp). Please check your internet connection and restart app.')
+          app.quit()
+      }
+  }).catch(err => {
+      console.error('❌ Binary check error:', err)
+      dialog.showErrorBox('Critical Error', 'Startup check crashed: ' + err.message)
+      app.quit()
+  })
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) {
+        // We re-check or just open? simpler to just open if we assume already checked.
+        createWindow()
+    }
   })
 })
 

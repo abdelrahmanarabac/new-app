@@ -21,11 +21,12 @@
     "build:linux": "electron-vite build && electron-builder --linux"
   },
   "dependencies": {
-
     "@electron-toolkit/preload": "^3.0.2",
+    "axios": "^1.13.2",
     "clsx": "^2.1.1",
     "electron-store": "^8.1.0",
     "framer-motion": "^12.23.26",
+    "fs-extra": "^11.3.3",
     "howler": "^2.2.4",
     "lucide-react": "^0.562.0",
     "music-metadata": "^11.10.4",

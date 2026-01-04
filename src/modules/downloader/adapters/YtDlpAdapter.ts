@@ -5,6 +5,7 @@ import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { app } from 'electron';
+import { BinaryInstaller } from '../../infrastructure/BinaryInstaller';
 
 export class YtDlpAdapter extends EventEmitter implements IMediaDownloader {
   private binaryPath: string;
@@ -12,55 +13,19 @@ export class YtDlpAdapter extends EventEmitter implements IMediaDownloader {
 
   constructor() {
     super();
-    // Determine binary path based on environment (dev vs prod)
-    // In dev: resources/bin/yt-dlp.exe
-    // In prod: resources/bin/yt-dlp.exe (unpacked)
-    const isDev = !app.isPackaged;
-    const resourcesPath = isDev 
-      ? path.join(process.cwd(), 'resources') 
-      : process.resourcesPath;
-      
-    this.binaryPath = path.join(resourcesPath, 'bin', 'yt-dlp.exe');
+    // Use the robust path from BinaryInstaller
+    const binPath = BinaryInstaller.getBinaryPath();
+    const isWin = process.platform === 'win32';
+    this.binaryPath = path.join(binPath, isWin ? 'yt-dlp.exe' : 'yt-dlp');
   }
 
   async init(): Promise<void> {
     console.log('[YtDlpAdapter] Initializing with binary:', this.binaryPath);
     if (!fs.existsSync(this.binaryPath)) {
-      console.log('[YtDlpAdapter] Binary missing. Attempting to download...');
-      try {
-        await this.downloadBinary();
-        console.log('[YtDlpAdapter] Binary downloaded successfully.');
-      } catch (e) {
-        console.error('[YtDlpAdapter] Failed to download binary:', e);
-        throw new Error(`yt-dlp binary missing and auto-download failed. Please install manually at: ${this.binaryPath}`);
-      }
+        // If still missing after app start, we try one last time or throw
+        console.error('[YtDlpAdapter] Binary missing! Startup check should have handled this.');
+        throw new Error(`yt-dlp binary missing at: ${this.binaryPath}`);
     }
-  }
-
-  private async downloadBinary(): Promise<void> {
-    // Ensure directory exists
-    const dir = path.dirname(this.binaryPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    const url = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe';
-    
-    return new Promise((resolve, reject) => {
-        const command = `powershell -Command "Invoke-WebRequest -Uri '${url}' -OutFile '${this.binaryPath}'"`;
-        const downloadProcess = spawn(command, { shell: true });
-        
-        downloadProcess.on('close', (code) => {
-            if (code === 0) resolve();
-            else reject(new Error(`Download process exited with code ${code}`));
-        });
-        
-        // Timeout protection
-        setTimeout(() => {
-            downloadProcess.kill();
-            reject(new Error('Download timed out'));
-        }, 60000); // 1 minute timeout
-    });
   }
 
   async download(url: string, options: DownloadOptions): Promise<DownloadJob> {
