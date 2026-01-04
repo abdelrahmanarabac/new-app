@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { GlassInput } from './GlassInput'
 import { NeonButton } from './NeonButton'
 import { GlassPanel } from './GlassPanel'
-import { Download, AlertCircle, CheckCircle2, Loader2, FolderOpen } from 'lucide-react'
+import { Download, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 
 export const DownloaderPanel = () => {
     const [url, setUrl] = useState('')

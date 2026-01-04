@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, app } from 'electron'
 import ytdl from '@distube/ytdl-core'
 import fs from 'fs'
 import path from 'path'
