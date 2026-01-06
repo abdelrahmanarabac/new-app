@@ -30,7 +30,8 @@
     "howler": "^2.2.4",
     "lucide-react": "^0.562.0",
     "music-metadata": "^11.10.4",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

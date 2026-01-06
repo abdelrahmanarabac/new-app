@@ -29,12 +29,15 @@ function App() {
 
     // Load Config
     if (window.api && window.api.getConfig) {
-      window.api.getConfig().then(config => {
-        if (config.volume !== undefined) {
-          setVolume(config.volume)
-          player.setVolume(config.volume)
-        }
-      }).catch(err => console.error(err))
+      window.api
+        .getConfig()
+        .then((config) => {
+          if (config.volume !== undefined) {
+            setVolume(config.volume)
+            player.setVolume(config.volume)
+          }
+        })
+        .catch((err) => console.error(err))
     } else {
       player.setVolume(volume)
     }
@@ -58,7 +61,7 @@ function App() {
         const name = p.split('\\').pop() || p.split('/').pop() || 'Unknown'
 
         // Check for duplicates before adding
-        const exists = tracks.some(t => t.url === p)
+        const exists = tracks.some((t) => t.url === p)
         if (!exists) {
           newTracks.push({
             id: Math.random().toString(36).substr(2, 9),
@@ -73,26 +76,26 @@ function App() {
         }
       }
 
-      setTracks(prev => {
+      setTracks((prev) => {
         // Double check against prev state
-        const existingUrls = new Set(prev.map(t => t.url))
-        const uniqueNew = newTracks.filter(t => !existingUrls.has(t.url))
+        const existingUrls = new Set(prev.map((t) => t.url))
+        const uniqueNew = newTracks.filter((t) => !existingUrls.has(t.url))
         return [...prev, ...uniqueNew]
       })
     } catch (err) {
-      console.error("File drop error", err)
+      console.error('File drop error', err)
     }
   }
 
   const handleBrowseFiles = async () => {
     if (window.api && window.api.selectAudioFile) {
       try {
-        const paths = await window.api.selectAudioFile();
+        const paths = await window.api.selectAudioFile()
         if (paths && paths.length > 0) {
-          await handleFilesDropped(paths);
+          await handleFilesDropped(paths)
         }
       } catch (error) {
-        console.error("Failed to browse files:", error)
+        console.error('Failed to browse files:', error)
       }
     }
   }
@@ -112,7 +115,7 @@ function App() {
 
   const handleNext = () => {
     if (!currentTrack || tracks.length === 0) return
-    const idx = tracks.findIndex(t => t.id === currentTrack.id)
+    const idx = tracks.findIndex((t) => t.id === currentTrack.id)
     if (idx !== -1 && idx < tracks.length - 1) {
       handlePlay(tracks[idx + 1])
     }
@@ -120,7 +123,7 @@ function App() {
 
   const handlePrev = () => {
     if (!currentTrack || tracks.length === 0) return
-    const idx = tracks.findIndex(t => t.id === currentTrack.id)
+    const idx = tracks.findIndex((t) => t.id === currentTrack.id)
     if (idx !== -1 && idx > 0) {
       handlePlay(tracks[idx - 1])
     }
@@ -128,7 +131,10 @@ function App() {
 
   return (
     <MainLayout>
-      <DragDropZone onFilesDropped={handleFilesDropped} className="flex w-full h-full overflow-hidden">
+      <DragDropZone
+        onFilesDropped={handleFilesDropped}
+        className="flex w-full h-full overflow-hidden"
+      >
         {/* SIDEBAR - Fixed Glass */}
         <aside className="w-[280px] shrink-0 h-full flex flex-col border-r border-white/5 bg-white/5 backdrop-blur-2xl z-20 pb-24">
           <div className="p-6 pb-2">
@@ -145,7 +151,10 @@ function App() {
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 1 }}
               >
-                <FolderOpen size={18} className="text-purple-400 group-hover:text-purple-300 transition-colors drop-shadow-neon" />
+                <FolderOpen
+                  size={18}
+                  className="text-purple-400 group-hover:text-purple-300 transition-colors drop-shadow-neon"
+                />
               </motion.div>
               <span>Browse Files</span>
             </button>
@@ -154,11 +163,7 @@ function App() {
           {/* Library */}
           <div className="flex-1 overflow-hidden px-2">
             <AnimatePresence>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="h-full"
-              >
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full">
                 <TrackList
                   tracks={tracks}
                   currentTrack={currentTrack}
@@ -172,11 +177,10 @@ function App() {
 
         {/* MAIN STAGE - Center Visualization */}
         <main className="flex-1 relative flex flex-col items-center justify-center p-8 pb-32 overflow-hidden">
-
           {/* Background Decoration */}
           <motion.div
-            animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
             className="absolute inset-0 pointer-events-none bg-[length:200%_200%] bg-gradient-to-br from-black via-[#0f0c29] to-[#302b63]"
           >
             <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-purple-600/20 blur-[120px] rounded-full mix-blend-screen" />
@@ -193,10 +197,14 @@ function App() {
             {/* Main Art */}
             <motion.div
               animate={playerState === 'playing' ? { rotate: 360 } : { rotate: 0 }}
-              transition={playerState === 'playing' ? { duration: 10, repeat: Infinity, ease: "linear" } : { duration: 0.8 }}
+              transition={
+                playerState === 'playing'
+                  ? { duration: 10, repeat: Infinity, ease: 'linear' }
+                  : { duration: 0.8 }
+              }
               className={cn(
-                "w-[320px] h-[320px] rounded-full bg-black/50 shadow-2xl relative overflow-hidden border border-white/10",
-                playerState === 'playing' ? "shadow-[0_0_50px_rgba(139,92,246,0.5)]" : "opacity-90"
+                'w-[320px] h-[320px] rounded-full bg-black/50 shadow-2xl relative overflow-hidden border border-white/10',
+                playerState === 'playing' ? 'shadow-[0_0_50px_rgba(139,92,246,0.5)]' : 'opacity-90'
               )}
             >
               {/* Placeholder Gradient Art */}
@@ -231,7 +239,7 @@ function App() {
             {/* Floating Animation Wrapper */}
             <motion.div
               animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               className="mt-8 mx-auto w-[200px] h-[20px] bg-black/40 blur-xl rounded-[100%]"
             />
           </div>
@@ -239,11 +247,12 @@ function App() {
           {/* Song Title (Large) */}
           {currentTrack && (
             <div className="mt-12 text-center z-10 space-y-2">
-              <h2 className="text-4xl font-bold text-white tracking-tight drop-shadow-md">{currentTrack.title}</h2>
+              <h2 className="text-4xl font-bold text-white tracking-tight drop-shadow-md">
+                {currentTrack.title}
+              </h2>
               <p className="text-xl text-white/60 font-medium">{currentTrack.artist}</p>
             </div>
           )}
-
         </main>
 
         {/* FLOATING PLAYER BAR */}
@@ -256,15 +265,14 @@ function App() {
             onSeek={(t) => player.seek(t / (duration || 1))}
             volume={volume}
             onVolumeChange={(v) => {
-              setVolume(v);
-              player.setVolume(v);
+              setVolume(v)
+              player.setVolume(v)
               if (window.api) window.api.setConfig('volume', v)
             }}
             onNext={handleNext}
             onPrev={handlePrev}
           />
         </div>
-
       </DragDropZone>
     </MainLayout>
   )

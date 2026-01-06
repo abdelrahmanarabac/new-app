@@ -17,7 +17,8 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      contextIsolation: true
     }
   })
 
@@ -49,9 +50,9 @@ app.whenReady().then(() => {
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // We can manually add this if needed, but skipping for now to fix crash.
-  
+
   app.on('browser-window-created', (_, __) => {
-      // optimizer.watchWindowShortcuts(window)
+    // optimizer.watchWindowShortcuts(window)
   })
 
   // IPC test
@@ -74,33 +75,38 @@ app.whenReady().then(() => {
   // Self-Healing Infrastructure Check
   // We block the main window until binaries are confirmed
   console.log('🔧 Checking critical binaries...')
-  BinaryInstaller.ensureBinariesExist().then((success) => {
+  BinaryInstaller.ensureBinariesExist()
+    .then((success) => {
       if (success) {
-          console.log('✅ Binaries verified. Launching UI.')
-          createWindow()
+        console.log('✅ Binaries verified. Launching UI.')
+        createWindow()
       } else {
-          console.error('❌ Critical binary check failed. App might not function correctly.')
-          // In a real app we might show a dialog here or quit.
-          // For now, attempting to launch anyway is risky but allows debug.
-          // But strict req says: "Block the main window until ensureBinaries() returns true."
-          // So if failed, we probably shouldn't show the main window or show an error window.
-          // Let's launch anyway but maybe with an error flag? checking prompt "Block... until returns true"
-          // If it returns false, it means download failed even after retries.
-          dialog.showErrorBox('Critical Error', 'Failed to download necessary components (yt-dlp). Please check your internet connection and restart app.')
-          app.quit()
+        console.error('❌ Critical binary check failed. App might not function correctly.')
+        // In a real app we might show a dialog here or quit.
+        // For now, attempting to launch anyway is risky but allows debug.
+        // But strict req says: "Block the main window until ensureBinaries() returns true."
+        // So if failed, we probably shouldn't show the main window or show an error window.
+        // Let's launch anyway but maybe with an error flag? checking prompt "Block... until returns true"
+        // If it returns false, it means download failed even after retries.
+        dialog.showErrorBox(
+          'Critical Error',
+          'Failed to download necessary components (yt-dlp). Please check your internet connection and restart app.'
+        )
+        app.quit()
       }
-  }).catch(err => {
+    })
+    .catch((err) => {
       console.error('❌ Binary check error:', err)
       dialog.showErrorBox('Critical Error', 'Startup check crashed: ' + err.message)
       app.quit()
-  })
+    })
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
-        // We re-check or just open? simpler to just open if we assume already checked.
-        createWindow()
+      // We re-check or just open? simpler to just open if we assume already checked.
+      createWindow()
     }
   })
 })
@@ -115,8 +121,8 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
-    const { killAllDownloads } = require('../modules/downloader/ytdlMain')
-    killAllDownloads()
+  const { killAllDownloads } = require('../modules/downloader/ytdlMain')
+  killAllDownloads()
 })
 
 // In this file you can include the rest of your app's specific main process

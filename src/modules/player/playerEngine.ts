@@ -16,7 +16,10 @@ class PlayerEngine {
   }
 
   // Hook for React to subscribe
-  subscribe(onStateChange: (state: PlayerState) => void, onProgress: (seek: number, duration: number) => void) {
+  subscribe(
+    onStateChange: (state: PlayerState) => void,
+    onProgress: (seek: number, duration: number) => void
+  ) {
     this.stateCb = onStateChange
     this.progressCb = onProgress
   }
@@ -81,8 +84,8 @@ class PlayerEngine {
 
   seek(per: number) {
     if (this.sound) {
-        const duration = this.sound.duration()
-        this.sound.seek(duration * per)
+      const duration = this.sound.duration()
+      this.sound.seek(duration * per)
     }
   }
 

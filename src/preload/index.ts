@@ -1,14 +1,26 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { DownloadRequestPayload, IpcChannels } from '../shared/types'
 
 // Custom APIs for renderer
 const api = {
-  downloadVideo: (url: string): Promise<any> => ipcRenderer.invoke('download-video', url),
+  downloadVideo: (payload: DownloadRequestPayload): Promise<void> =>
+    ipcRenderer.invoke(IpcChannels.DOWNLOAD_VIDEO, payload),
+
   parseFile: (path: string): Promise<any> => ipcRenderer.invoke('parse-file', path),
-  onDownloadProgress: (callback: (data: any) => void) => ipcRenderer.on('download-progress', (_, data) => callback(data)),
-  removeDownloadProgressListener: () => ipcRenderer.removeAllListeners('download-progress'),
+
+  onDownloadProgress: (callback: (data: any) => void): void => {
+    ipcRenderer.on('download-progress', (_, data) => callback(data))
+  },
+
+  removeDownloadProgressListener: (): void => {
+    ipcRenderer.removeAllListeners('download-progress')
+  },
+
   getConfig: (): Promise<any> => ipcRenderer.invoke('get-config'),
-  setConfig: (key: string, value: any) => ipcRenderer.invoke('set-config', key, value),
+
+  setConfig: (key: string, value: any): Promise<void> => ipcRenderer.invoke('set-config', key, value),
+
   selectAudioFile: (): Promise<string[]> => ipcRenderer.invoke('select-audio-file')
 }
 
