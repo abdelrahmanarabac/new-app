@@ -1,10 +1,11 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
+import { DownloadRequestPayload } from '../shared/types'
 
 declare global {
   interface Window {
     electron: ElectronAPI
     api: {
-      downloadVideo: (url: string) => Promise<any>
+      downloadVideo: (payload: DownloadRequestPayload) => Promise<void>
       parseFile: (path: string) => Promise<any>
       onDownloadProgress: (callback: (data: any) => void) => void
       removeDownloadProgressListener: () => void

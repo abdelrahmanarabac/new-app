@@ -10,7 +10,9 @@
   ],
   "exclude": [
     "**/*.tsx",
-    "src/modules/player/playerEngine.ts"
+    "src/modules/player/playerEngine.ts",
+    "src/modules/**/hooks/**/*",
+    "src/modules/**/ui/**/*"
   ],
   "compilerOptions": {
     "composite": true,
