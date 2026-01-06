@@ -9,16 +9,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        glass: 'rgba(255, 255, 255, 0.05)',
-        surface: '#121212',
-        primary: '#00f3ff',
-        secondary: '#7000ff'
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))'
+        'primary': '#2bbdee',
+        'background-dark': '#0f1115',
+        'background-dark-end': '#1a1d24',
+        'glass-bg': 'rgba(255, 255, 255, 0.03)',
+        'glass-border': 'rgba(255, 255, 255, 0.1)',
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif']
+        'display': ['Inter', 'sans-serif'],
+        'sans': ['Inter', 'sans-serif'] // Default sans to Inter as well
+      },
+      backgroundImage: {
+        'neon-gradient': 'linear-gradient(135deg, #2bbdee 0%, #22d3ee 100%)',
+      },
+      boxShadow: {
+        'neon': '0 0 20px rgba(43, 189, 238, 0.3)',
+        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
       }
     }
   },
