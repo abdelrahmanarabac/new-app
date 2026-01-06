@@ -35,16 +35,19 @@ export interface AppConfig {
 }
 
 // -- SECURE IPC SCHEMAS --
-import { z } from 'zod';
+import { z } from 'zod'
 
 export const IpcChannels = {
-  DOWNLOAD_VIDEO: 'download-video',
-} as const;
+  DOWNLOAD_VIDEO: 'download-video'
+} as const
 
 export const DownloadRequestSchema = z.object({
-  url: z.string().url("Invalid URL format").regex(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/, "Only YouTube URLs allowed"),
+  url: z
+    .string()
+    .url('Invalid URL format')
+    .regex(/^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/, 'Only YouTube URLs allowed'),
   format: z.enum(['mp3', 'm4a', 'mp4']).optional().default('m4a'),
-  quality: z.enum(['high', 'medium', 'low']).optional().default('high'),
-});
+  quality: z.enum(['high', 'medium', 'low']).optional().default('high')
+})
 
-export type DownloadRequestPayload = z.infer<typeof DownloadRequestSchema>;
+export type DownloadRequestPayload = z.infer<typeof DownloadRequestSchema>

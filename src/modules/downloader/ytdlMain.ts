@@ -25,7 +25,6 @@ export function setupDownloader(downloadPath: string): void {
   registerSafeHandler(IpcChannels.DOWNLOAD_VIDEO, DownloadRequestSchema, async (event, payload) => {
     const { url, format, quality } = payload
     try {
-      console.log(`📡 Analyzing with yt-dlp: ${url}`)
       // Zod already validated the URL format
 
       // 1. Get Info First (Restoring legacy behavior)
@@ -38,8 +37,6 @@ export function setupDownloader(downloadPath: string): void {
       if (fs.existsSync(filePath)) {
         return { status: 'exists', filePath, title, duration: info.duration }
       }
-
-      console.log(`🚀 Starting Download Job for: ${title}`)
 
       const job = await downloadManager.startDownload(url, {
         format: format === 'mp4' ? 'video' : 'audio',
@@ -82,7 +79,6 @@ export function setupDownloader(downloadPath: string): void {
         }
 
         // Forward events from DownloadManager
-        // TODO: Refactor DownloadManager to bubble events naturally
 
         downloadManager.on('progress', onProgress)
         downloadManager.on('job-completed', onCompleted)
@@ -94,9 +90,10 @@ export function setupDownloader(downloadPath: string): void {
           downloadManager.off('job-failed', onFailed)
         }
       })
-    } catch (e: any) {
-      console.error('🔥 Critical Handler Error:', e.message)
-      throw new Error(e.message || 'فشل التحميل لسبب غير معروف')
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error'
+      console.error('🔥 Critical Handler Error:', message)
+      throw new Error(message || 'فشل التحميل لسبب غير معروف')
     }
   })
 }

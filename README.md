@@ -3,6 +3,7 @@
 An Electron application with React and TypeScript.
 
 ## Features
+
 - **Deep Atmospheric Glass UI**: A production-grade, neon-infused bespoke design.
 - **Local Playback**: Drag & Drop support for MP3s with metadata parsing.
 - **YouTube Downloader**: Integrated yt-dlp/ffmpeg support for high-quality audio extraction.

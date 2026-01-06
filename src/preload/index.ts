@@ -19,7 +19,8 @@ const api = {
 
   getConfig: (): Promise<any> => ipcRenderer.invoke('get-config'),
 
-  setConfig: (key: string, value: any): Promise<void> => ipcRenderer.invoke('set-config', key, value),
+  setConfig: (key: string, value: any): Promise<void> =>
+    ipcRenderer.invoke('set-config', key, value),
 
   selectAudioFile: (): Promise<string[]> => ipcRenderer.invoke('select-audio-file')
 }

@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import icon from '../../resources/icon.png?asset'
-import { setupDownloader } from '../modules/downloader/ytdlMain'
+import { setupDownloader, killAllDownloads } from '../modules/downloader/ytdlMain'
 import { setupMetadata } from '../modules/library/metadataMain'
 
 import { setupStore } from '../modules/downloader/storeMain'
@@ -50,13 +50,6 @@ app.whenReady().then(() => {
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // We can manually add this if needed, but skipping for now to fix crash.
-
-  app.on('browser-window-created', (_, __) => {
-    // optimizer.watchWindowShortcuts(window)
-  })
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
 
   const downloadPath = app.getPath('downloads')
   setupDownloader(downloadPath)
@@ -121,7 +114,6 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
-  const { killAllDownloads } = require('../modules/downloader/ytdlMain')
   killAllDownloads()
 })
 

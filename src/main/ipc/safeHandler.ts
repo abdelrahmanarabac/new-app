@@ -10,11 +10,9 @@ import { z } from 'zod'
 export function registerSafeHandler<T extends z.ZodType>(
   channel: string,
   schema: T,
-  handler: (event: IpcMainInvokeEvent, data: z.infer<T>) => Promise<any> | any
+  handler: (event: IpcMainInvokeEvent, data: z.infer<T>) => Promise<unknown> | unknown
 ): void {
   ipcMain.handle(channel, async (event, rawData) => {
-    console.log(`[IPC] Received request on ${channel}`)
-
     // 1. Validate Input (The Guard)
     const result = schema.safeParse(rawData)
 
@@ -29,7 +27,7 @@ export function registerSafeHandler<T extends z.ZodType>(
     // 2. Execute Logic
     try {
       return await handler(event, result.data)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`[IPC Error] ${channel}:`, error)
       throw error
     }
