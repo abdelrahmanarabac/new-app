@@ -1,7 +1,7 @@
-import { useDownloader } from '@modules/downloader/hooks/useDownloader'
-import { DownloadForm } from '@modules/downloader/ui/DownloadForm'
-import { StatusCard } from '@modules/downloader/ui/StatusCard'
-import { GlassPanel } from './GlassPanel'
+import { useDownloader } from '../hooks/useDownloader'
+import { DownloadForm } from './DownloadForm'
+import { StatusCard } from './StatusCard'
+import { GlassPanel } from '@ui/components/GlassPanel'
 import { Download } from 'lucide-react'
 
 export const DownloaderPanel = (): React.JSX.Element => {
