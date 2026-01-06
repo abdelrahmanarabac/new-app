@@ -14,51 +14,87 @@ export interface Track {
   dateAdded: number
 }
 
+const LIBRARY_FILENAME = 'library.json'
+const ENCODING = 'utf-8'
+
 export class JsonLibrary {
-  private filePath: string
+  private readonly storagePath: string
   private tracks: Track[] = []
 
   constructor() {
-    this.filePath = path.join(app.getPath('userData'), 'library.json')
-    this.load()
+    this.storagePath = this.resolveStoragePath()
+    this.reload()
   }
 
-  private load(): void {
+  public getTracks(): Track[] {
+    return this.tracks
+  }
+
+  public addTrack(track: Track): void {
+    if (this.isTrackDuplicate(track)) {
+      return
+    }
+    this.tracks.push(track)
+    this.persist()
+  }
+
+  public removeTrack(id: string): void {
+    this.tracks = this.tracks.filter((t) => t.id !== id)
+    this.persist()
+  }
+
+  private resolveStoragePath(): string {
+    return path.join(app.getPath('userData'), LIBRARY_FILENAME)
+  }
+
+  private reload(): void {
     try {
-      if (fs.existsSync(this.filePath)) {
-        const data = fs.readFileSync(this.filePath, 'utf-8')
-        this.tracks = JSON.parse(data)
-      }
-    } catch (err) {
-      console.error('Failed to load library:', err)
+      this.attemptLoad()
+    } catch (error) {
+      this.handleError('Load failed', error)
       this.tracks = []
     }
   }
 
-  private save(): void {
+  private attemptLoad(): void {
+    if (!this.fileAccessible()) {
+      return
+    }
+    const data = this.readFileContent()
+    this.tracks = this.parseTracks(data)
+  }
+
+  private persist(): void {
     try {
-      fs.writeFileSync(this.filePath, JSON.stringify(this.tracks, null, 2), 'utf-8')
-    } catch (err) {
-      console.error('Failed to save library:', err)
+      this.attemptSave()
+    } catch (error) {
+      this.handleError('Save failed', error)
     }
   }
 
-  getTracks(): Track[] {
-    return this.tracks
+  private attemptSave(): void {
+    const serialized = JSON.stringify(this.tracks, null, 2)
+    fs.writeFileSync(this.storagePath, serialized, ENCODING)
   }
 
-  addTrack(track: Track): void {
-    // Avoid duplicates
-    const exists = this.tracks.some((t) => t.id === track.id || t.url === track.url)
-    if (!exists) {
-      this.tracks.push(track)
-      this.save()
-    }
+  private fileAccessible(): boolean {
+    return fs.existsSync(this.storagePath)
   }
 
-  removeTrack(id: string): void {
-    this.tracks = this.tracks.filter((t) => t.id !== id)
-    this.save()
+  private readFileContent(): string {
+    return fs.readFileSync(this.storagePath, ENCODING)
+  }
+
+  private parseTracks(data: string): Track[] {
+    return JSON.parse(data)
+  }
+
+  private isTrackDuplicate(track: Track): boolean {
+    return this.tracks.some((t) => t.id === track.id || t.url === track.url)
+  }
+
+  private handleError(context: string, error: unknown): void {
+    console.error(`${context}:`, error)
   }
 }
 
