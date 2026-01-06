@@ -1,9 +1,10 @@
-import fs from 'fs'
 import path from 'path'
+import fs from 'fs'
+import { registerSafeHandler } from '../../main/ipc/safeHandler'
+import { IpcChannels, DownloadRequestSchema } from '../../shared/types'
 import { DownloadManager } from './core/DownloadManager'
 import { sanitizeFilename } from './validator'
-import { registerSafeHandler } from '../../main/ipc/safeHandler'
-import { DownloadRequestSchema, IpcChannels } from '../../shared/types'
+import { libraryStore } from '../library/store/JsonLibrary'
 
 // Singleton instance
 const downloadManager = new DownloadManager()
@@ -58,6 +59,20 @@ export function setupDownloader(downloadPath: string): void {
         const onCompleted = (jobId: string): void => {
           if (jobId === job.id) {
             cleanup()
+
+            // Save to Library
+            const newTrack: any = {
+              id: job.id,
+              url: filePath,
+              title: info.title,
+              artist: info.artist || 'Unknown Artist',
+              duration: info.duration,
+              albumArt: info.thumbnail,
+              source: 'youtube',
+              status: 'ready',
+              dateAdded: Date.now()
+            }
+            libraryStore.addTrack(newTrack)
 
             event.sender.send('download-progress', { progress: 100, status: 'completed' })
             resolve({

@@ -12,6 +12,9 @@ declare global {
       getConfig: () => Promise<any>
       setConfig: (key: string, value: any) => Promise<void>
       selectAudioFile: () => Promise<string[]>
+      getLibrary: () => Promise<any[]>
+      addTrack: (track: any) => Promise<void>
+      removeTrack: (id: string) => Promise<void>
     }
   }
 }

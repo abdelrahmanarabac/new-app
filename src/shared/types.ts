@@ -34,12 +34,7 @@ export interface AppConfig {
   downloadPath: string
 }
 
-// -- SECURE IPC SCHEMAS --
 import { z } from 'zod'
-
-export const IpcChannels = {
-  DOWNLOAD_VIDEO: 'download-video'
-} as const
 
 export const DownloadRequestSchema = z.object({
   url: z
@@ -51,3 +46,26 @@ export const DownloadRequestSchema = z.object({
 })
 
 export type DownloadRequestPayload = z.infer<typeof DownloadRequestSchema>
+
+export const IpcChannels = {
+  DOWNLOAD_VIDEO: 'download-video',
+  GET_LIBRARY: 'get-library',
+  ADD_TRACK: 'add-track',
+  REMOVE_TRACK: 'remove-track'
+} as const
+
+export const AddTrackSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  title: z.string(),
+  artist: z.string().optional(),
+  duration: z.number().optional(),
+  albumArt: z.string().optional(),
+  source: z.enum(['local', 'youtube']),
+  status: z.enum(['ready', 'missing', 'corrupted']),
+  dateAdded: z.number()
+})
+
+export const RemoveTrackSchema = z.object({
+  id: z.string()
+})

@@ -22,7 +22,13 @@ const api = {
   setConfig: (key: string, value: any): Promise<void> =>
     ipcRenderer.invoke('set-config', key, value),
 
-  selectAudioFile: (): Promise<string[]> => ipcRenderer.invoke('select-audio-file')
+  selectAudioFile: (): Promise<string[]> => ipcRenderer.invoke('select-audio-file'),
+
+  // Library Ops
+  getLibrary: (): Promise<any[]> => ipcRenderer.invoke(IpcChannels.GET_LIBRARY),
+  addTrack: (track: any): Promise<void> => ipcRenderer.invoke(IpcChannels.ADD_TRACK, track),
+  removeTrack: (id: string): Promise<void> =>
+    ipcRenderer.invoke(IpcChannels.REMOVE_TRACK, { id })
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

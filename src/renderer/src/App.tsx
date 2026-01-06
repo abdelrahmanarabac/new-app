@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Header } from '@modules/downloader/ui/Header'
 import { DownloaderCard } from '@modules/downloader/ui/DownloaderCard'
 import { TrackList } from '@modules/downloader/ui/TrackList'
@@ -21,6 +21,29 @@ function App(): React.JSX.Element {
     // Local track state (Library)
     const [tracks, setTracks] = useState<Track[]>([])
 
+    const fetchLibrary = async (): Promise<void> => {
+        try {
+            const lib = await window.api.getLibrary()
+            setTracks(lib)
+        } catch (e) {
+            console.error('Failed to fetch library', e)
+        }
+    }
+
+    useEffect(() => {
+        fetchLibrary()
+
+        // Listen for download completion to refresh library
+        window.api.onDownloadProgress((data: any) => {
+            if (data.status === 'completed') {
+                fetchLibrary()
+            }
+        })
+        return () => {
+            window.api.removeDownloadProgressListener()
+        }
+    }, [])
+
     // Player Logic
     const {
         playerState,
@@ -35,7 +58,6 @@ function App(): React.JSX.Element {
 
     const handleFilesDropped = async (paths: string[]): Promise<void> => {
         try {
-            const newTracks: Track[] = []
             for (const p of paths) {
                 let meta: FileMetadata = {}
                 try {
@@ -47,30 +69,24 @@ function App(): React.JSX.Element {
                 }
 
                 const name = p.split('\\').pop() || p.split('/').pop() || 'Unknown'
-                // Simple duplicate check
-                const exists = tracks.some((t) => t.url === p)
-                if (!exists) {
-                    newTracks.push({
-                        id: Math.random().toString(36).substr(2, 9),
-                        url: p,
-                        title: meta.title || name,
-                        artist: meta.artist || 'Unknown Artist',
-                        duration: meta.duration || 0,
-                        source: 'local',
-                        status: 'ready',
-                        dateAdded: Date.now(),
-                        albumArt: meta.picture
-                            ? `data:${meta.picture.format};base64,${meta.picture.data}`
-                            : undefined
-                    })
+                const newTrack: any = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    url: p,
+                    title: meta.title || name,
+                    artist: meta.artist || 'Unknown Artist',
+                    duration: meta.duration || 0,
+                    source: 'local',
+                    status: 'ready',
+                    dateAdded: Date.now(),
+                    albumArt: meta.picture
+                        ? `data:${meta.picture.format};base64,${meta.picture.data}`
+                        : undefined
                 }
-            }
 
-            setTracks((prev) => {
-                const existingUrls = new Set(prev.map((t) => t.url))
-                const uniqueNew = newTracks.filter((t) => !existingUrls.has(t.url))
-                return [...prev, ...uniqueNew]
-            })
+                await window.api.addTrack(newTrack)
+            }
+            // Refresh after adding
+            fetchLibrary()
         } catch (err) {
             console.error('File drop error', err)
         }
@@ -91,7 +107,7 @@ function App(): React.JSX.Element {
             <Header />
 
             <main className="flex-1 overflow-y-auto pb-32 px-4 hide-scrollbar">
-                <DownloaderCard />
+                <DownloaderCard onFilesSelected={handleFilesDropped} />
                 <TrackList
                     tracks={tracks}
                     currentTrack={currentTrack}
